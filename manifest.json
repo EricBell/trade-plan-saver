@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Trade Plan Saver",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Captures and saves trade plan JSON responses to local directory",
 
   "permissions": [
@@ -27,13 +27,21 @@
     }
   },
 
-  "content_scripts": [{
-    "matches": ["<all_urls>"],
-    "js": ["content-script.js"],
-    "run_at": "document_start",
-    "all_frames": true,
-    "world": "MAIN"
-  }],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script-main.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script-isolated.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
 
   "icons": {
     "16": "icons/icon16.png",

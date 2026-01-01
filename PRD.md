@@ -241,3 +241,13 @@ if (permission !== 'granted') {
   - Now injects into MAIN world (page context) to properly override fetch/XMLHttpRequest
   - This allows interception of requests made by page JavaScript bundles
 - Updated version to 1.0.2 in manifest.json and popup.html
+
+### 2026-01-01 - v1.0.3 - Two-Script Bridge Architecture
+- **CRITICAL FIX**: Implemented two-script approach to communicate between MAIN and ISOLATED worlds
+  - Created `content-script-main.js` - runs in MAIN world, intercepts fetch/XHR
+  - Created `content-script-isolated.js` - runs in ISOLATED world, has Chrome API access
+  - Bridge communication via `window.postMessage` between the two worlds
+  - Fixes "Cannot read properties of undefined (reading 'sendMessage')" error
+  - MAIN world intercepts requests → posts message → ISOLATED world forwards to background
+- Updated manifest.json to include both content scripts with different world contexts
+- Updated version to 1.0.3 in manifest.json and popup.html
