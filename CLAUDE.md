@@ -27,7 +27,15 @@ Chrome extension (Manifest V3) that captures JSON responses from `https://ttghg.
 
 ## Documentation Maintenance
 
-**IMPORTANT**: Whenever you make changes to this Chrome extension or project, update `PRD.md` with a note about the change(s) in a "Change Log" section at the bottom of the file. This ensures the PRD stays synchronized with the actual implementation.
+**IMPORTANT**: Whenever you make changes to this Chrome extension or project:
+
+1. **Increment the version number**: Increase the patch value (third number) in both `manifest.json` and `popup.html`
+   - Example: `1.0.1` → `1.0.2`
+   - For major features or breaking changes, increment minor or major version accordingly
+
+2. **Update PRD.md**: Add a note about the change(s) in the "Change Log" section at the bottom of the file
+   - Include the new version number in the changelog entry
+   - This ensures the PRD stays synchronized with the actual implementation
 
 ## Development Setup
 

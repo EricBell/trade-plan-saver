@@ -222,3 +222,22 @@ if (permission !== 'granted') {
   - Built background.js service worker for coordination and file saving
   - Built popup UI with HTML/CSS/JS for directory selection and toggle control
 - Extension ready for testing in Chrome Developer mode
+
+### 2026-01-01 - v1.0.1 - Enhanced Debugging
+- Added detailed console logging to content-script.js to debug capture issues:
+  - Logs every fetch and XHR request with numbered tracking
+  - Logs all requests containing 'trade-plan' or 'ttghg' patterns
+  - Enhanced visibility with ✅ markers for successful detection
+  - Added timestamp logging for interceptor initialization
+- Updated version to 1.0.1 in manifest.json and popup.html
+- Updated CLAUDE.md with versioning requirement:
+  - Added requirement to increment patch version after code modifications
+  - Documented that both manifest.json and popup.html must be updated
+  - Integrated versioning requirement into Documentation Maintenance section
+
+### 2026-01-01 - v1.0.2 - Fix Content Script World
+- **CRITICAL FIX**: Added `"world": "MAIN"` to content_scripts in manifest.json
+  - Content scripts were running in isolated world, not intercepting page's fetch/XHR
+  - Now injects into MAIN world (page context) to properly override fetch/XMLHttpRequest
+  - This allows interception of requests made by page JavaScript bundles
+- Updated version to 1.0.2 in manifest.json and popup.html
