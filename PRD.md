@@ -1,0 +1,215 @@
+# Trade Plan Saver Chrome Extension - PRD
+
+## Overview
+Build a Chrome extension to capture JSON responses from `https://ttghg.onrender.com/api/v1/trade-plan` and save them to a user-selected directory with automatic filename generation.
+
+## Architecture
+
+### Files to Create
+```
+/home/eric/workspace/original/trade-plan-saver/
+├── manifest.json                 # Manifest V3 configuration
+├── background.js                 # Service worker for coordination
+├── content-script.js            # Intercepts network requests
+├── popup.html                    # User interface
+├── popup.js                      # UI logic
+├── popup.css                     # Styling
+├── storage-manager.js           # Settings & IndexedDB for handles
+├── file-saver.js                # File System Access API logic
+└── icons/
+    ├── icon16.png
+    ├── icon48.png
+    └── icon128.png
+```
+
+## Key Technical Decisions
+
+### 1. Network Interception Strategy
+**Challenge**: Manifest V3's `declarativeNetRequest` cannot read response bodies.
+
+**Solution**: Inject content script that intercepts `fetch()` and `XMLHttpRequest` to capture the JSON response:
+- Override native fetch/XHR in page context
+- Match URL: `https://ttghg.onrender.com/api/v1/trade-plan`
+- Send captured JSON to background service worker via `chrome.runtime.sendMessage()`
+
+### 2. File Saving Strategy
+**File System Access API** for directory persistence:
+- Use `window.showDirectoryPicker()` in popup for directory selection
+- Store `FileSystemDirectoryHandle` in **IndexedDB** (cannot use chrome.storage)
+- Verify permissions with `queryPermission()`/`requestPermission()` before each save
+- Store simple settings (isEnabled, hasDirectoryAccess) in **chrome.storage.local**
+
+### 3. Filename Generation
+Format: `trade-plan-<TICKER>-<YYMMDD>-<HHMM>.json`
+
+```javascript
+const ticker = data.ticker;  // Extract from JSON
+const date = new Date(timestamp);  // Uses local timezone automatically
+
+// YYMMDD
+const year = date.getFullYear().toString().slice(-2);
+const month = (date.getMonth() + 1).toString().padStart(2, '0');
+const day = date.getDate().toString().padStart(2, '0');
+
+// HHMM (24-hour)
+const hours = date.getHours().toString().padStart(2, '0');
+const minutes = date.getMinutes().toString().padStart(2, '0');
+
+// Example: trade-plan-SPY-260101-0940.json
+```
+
+## Implementation Flow
+
+### User Workflow
+1. User clicks extension icon → popup opens
+2. User clicks "Select Save Directory" → picks folder
+3. User enables "Enable Capture" toggle
+4. When `trade-plan` API request occurs → JSON automatically saved to directory
+5. Notification shows: "Trade Plan Saved - trade-plan-SPY-260101-0940.json"
+
+### Technical Flow
+```
+Page makes API request
+    ↓
+Content script intercepts fetch/XHR response
+    ↓
+Sends {type: 'TRADE_PLAN_CAPTURED', data, timestamp} to background
+    ↓
+Background checks if enabled
+    ↓
+Background retrieves directory handle from IndexedDB
+    ↓
+Background verifies/requests file permissions
+    ↓
+Background generates filename from ticker + timestamp
+    ↓
+Background writes JSON file using File System Access API
+    ↓
+Shows success notification
+```
+
+## Manifest V3 Configuration
+
+### Required Permissions
+```json
+{
+  "permissions": [
+    "storage",              // chrome.storage.local for settings
+    "notifications"         // Success/error notifications
+  ],
+  "host_permissions": [
+    "https://ttghg.onrender.com/*"  // Access target domain
+  ],
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["content-script.js"],
+    "run_at": "document_start",
+    "all_frames": true
+  }]
+}
+```
+
+Note: `declarativeNetRequest` not needed - content script handles interception.
+
+## Storage Architecture
+
+### Two-Tier Approach
+
+**chrome.storage.local**:
+```javascript
+{
+  isEnabled: true/false,
+  hasDirectoryAccess: true/false,
+  directoryPath: "dirname"  // Display only
+}
+```
+
+**IndexedDB** (`TradePlanSaverDB`):
+```javascript
+objectStore('handles') {
+  'saveDirectory': FileSystemDirectoryHandle
+}
+```
+
+**Why**: FileSystemHandle is a complex object that cannot be serialized to chrome.storage, requiring IndexedDB.
+
+## Critical Implementation Details
+
+### 1. Content Script Interception
+Must intercept BEFORE page scripts run to catch all requests:
+```javascript
+// manifest.json
+"run_at": "document_start"
+
+// Override both fetch and XMLHttpRequest
+const originalFetch = window.fetch;
+window.fetch = async function(...args) {
+  const response = await originalFetch.apply(this, args);
+  const url = args[0];
+
+  if (url.includes('ttghg.onrender.com/api/v1/trade-plan')) {
+    const clonedResponse = response.clone();
+    const data = await clonedResponse.json();
+    chrome.runtime.sendMessage({
+      type: 'TRADE_PLAN_CAPTURED',
+      data: data,
+      timestamp: Date.now()
+    });
+  }
+
+  return response;
+};
+```
+
+### 2. Permission Verification
+File permissions may expire - always verify before saving:
+```javascript
+const permission = await dirHandle.queryPermission({ mode: 'readwrite' });
+if (permission !== 'granted') {
+  await dirHandle.requestPermission({ mode: 'readwrite' });
+}
+```
+
+### 3. Service Worker Lifecycle
+- Service workers are ephemeral (can terminate anytime)
+- Load `isEnabled` state on startup/install
+- Save files immediately on capture (no queuing)
+
+## Browser Requirements
+- Chrome 102+ (File System Access API in service workers)
+- Cannot test in Incognito mode (API restrictions)
+
+## Testing Plan
+1. Load unpacked extension via `chrome://extensions/` (Developer mode)
+2. Open popup → select directory → verify success
+3. Enable toggle → verify status badge changes
+4. Navigate to page using the API
+5. Trigger API request → verify file saved
+6. Check filename format and JSON content
+7. Test browser restart → verify settings persist
+8. Test error cases (no directory, disabled state)
+
+## Critical Files
+
+1. **manifest.json** - Extension configuration and permissions
+2. **content-script.js** - Network request interception
+3. **background.js** - Event coordination and file saving
+4. **storage-manager.js** - Settings + IndexedDB handle persistence
+5. **file-saver.js** - File System Access API implementation
+
+## Next Steps
+1. Create placeholder icons (16x16, 48x48, 128x128 PNG)
+2. Implement manifest.json with all permissions
+3. Build content-script.js for fetch/XHR interception
+4. Implement storage-manager.js with IndexedDB
+5. Build file-saver.js with filename generation
+6. Create background.js service worker
+7. Build popup UI (HTML/CSS/JS)
+8. Load and test in Chrome
+
+## Change Log
+
+### 2026-01-01
+- Initial PRD created
+- Defined architecture with Manifest V3, content script interception, and File System Access API
+- Established two-tier storage approach (chrome.storage.local + IndexedDB)
