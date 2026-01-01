@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trade Plan Saver</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Trade Plan Saver</h1>
+    </div>
+
+    <div class="status-section">
+      <div class="status-row">
+        <span class="label">Status:</span>
+        <span id="status" class="status-badge status-disabled">Disabled</span>
+      </div>
+      <div class="status-row">
+        <span class="label">Directory:</span>
+        <span id="directory-path" class="directory-path">None selected</span>
+      </div>
+    </div>
+
+    <div class="controls-section">
+      <button id="select-dir-btn" class="btn btn-primary">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Select Save Directory
+      </button>
+
+      <button id="toggle-btn" class="btn btn-secondary" disabled>
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10" stroke-width="2"/>
+          <path d="M12 6v6l4 2" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Enable Capture
+      </button>
+    </div>
+
+    <div class="info-section">
+      <div class="info-header">File Format</div>
+      <div class="info-text">
+        Files will be saved as:<br>
+        <code>trade-plan-&lt;TICKER&gt;-&lt;YYMMDD&gt;-&lt;HHMM&gt;.json</code>
+      </div>
+      <div class="info-example">
+        Example: <code>trade-plan-SPY-260101-0940.json</code>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-text">v1.0.0</div>
+    </div>
+  </div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
