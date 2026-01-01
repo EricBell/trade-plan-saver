@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Trade Plan Saver",
-  "version": "1.0.7",
-  "description": "Captures and saves trade plan JSON responses to local directory",
+  "version": "1.0.8",
+  "description": "Captures and saves trade plan JSON responses to Downloads folder",
 
   "permissions": [
     "storage",
-    "notifications"
+    "notifications",
+    "downloads"
   ],
 
   "host_permissions": [

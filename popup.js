@@ -1,16 +1,13 @@
-// Popup UI Logic - Handles user interactions and directory selection
+// Popup UI Logic - Handles user interactions
 
-import { getSettings, saveSettings, getDirectoryHandle, saveDirectoryHandle } from './storage-manager.js';
+import { getSettings, saveSettings } from './storage-manager.js';
 
 // State
 let currentSettings = null;
-let directoryHandle = null;
 
 // DOM Elements
 const statusEl = document.getElementById('status');
-const directoryPathEl = document.getElementById('directory-path');
 const toggleBtn = document.getElementById('toggle-btn');
-const selectDirBtn = document.getElementById('select-dir-btn');
 
 /**
  * Initialize popup
@@ -19,12 +16,10 @@ async function init() {
   console.log('[Trade Plan Saver Popup] Initializing...');
 
   try {
-    // Load settings and directory handle
+    // Load settings
     currentSettings = await getSettings();
-    directoryHandle = await getDirectoryHandle();
 
     console.log('[Trade Plan Saver Popup] Settings loaded:', currentSettings);
-    console.log('[Trade Plan Saver Popup] Directory handle:', directoryHandle ? 'Available' : 'Not available');
 
     // Update UI
     updateUI();
@@ -42,29 +37,18 @@ async function init() {
  * Update UI based on current state
  */
 function updateUI() {
-  // Update status badge
+  // Update status badge and button
   if (currentSettings.isEnabled) {
     statusEl.textContent = 'Enabled';
     statusEl.className = 'status-badge status-enabled';
     toggleBtn.textContent = 'Disable Capture';
-    toggleBtn.classList.remove('btn-secondary');
+    toggleBtn.classList.remove('btn-primary');
     toggleBtn.classList.add('btn-secondary', 'enabled');
   } else {
     statusEl.textContent = 'Disabled';
     statusEl.className = 'status-badge status-disabled';
     toggleBtn.textContent = 'Enable Capture';
-    toggleBtn.className = 'btn btn-secondary';
-  }
-
-  // Update directory path
-  if (currentSettings.hasDirectoryAccess && directoryHandle) {
-    directoryPathEl.textContent = directoryHandle.name || 'Selected';
-    directoryPathEl.title = directoryHandle.name || 'Directory selected';
-    toggleBtn.disabled = false;
-  } else {
-    directoryPathEl.textContent = 'None selected';
-    directoryPathEl.title = 'Please select a directory first';
-    toggleBtn.disabled = true;
+    toggleBtn.className = 'btn btn-primary';
   }
 }
 
@@ -72,86 +56,7 @@ function updateUI() {
  * Attach event listeners to buttons
  */
 function attachEventListeners() {
-  selectDirBtn.addEventListener('click', handleSelectDirectory);
   toggleBtn.addEventListener('click', handleToggleCapture);
-}
-
-/**
- * Handle directory selection
- */
-async function handleSelectDirectory() {
-  console.log('[Trade Plan Saver Popup] Select directory clicked');
-
-  try {
-    // Disable button during selection
-    selectDirBtn.disabled = true;
-    selectDirBtn.textContent = 'Selecting...';
-    selectDirBtn.classList.add('pulsing');
-
-    // Request directory access
-    const handle = await window.showDirectoryPicker({
-      mode: 'readwrite',
-      startIn: 'downloads'
-    });
-
-    console.log('[Trade Plan Saver Popup] Directory selected:', handle.name);
-
-    // Verify we have permission
-    let permission = await handle.queryPermission({ mode: 'readwrite' });
-    console.log('[Trade Plan Saver Popup] Initial permission:', permission);
-
-    if (permission !== 'granted') {
-      console.log('[Trade Plan Saver Popup] Requesting permission...');
-      const request = await handle.requestPermission({ mode: 'readwrite' });
-      console.log('[Trade Plan Saver Popup] Requested permission result:', request);
-
-      if (request !== 'granted') {
-        throw new Error('Directory access denied. Please allow access in the Chrome dialog.');
-      }
-
-      // Verify permission was actually granted
-      permission = await handle.queryPermission({ mode: 'readwrite' });
-      console.log('[Trade Plan Saver Popup] Final permission after request:', permission);
-
-      if (permission !== 'granted') {
-        throw new Error('Permission not persisted. Chrome may not support persistent directory access on this system.');
-      }
-    }
-
-    console.log('[Trade Plan Saver Popup] ✅ Permission verified as GRANTED');
-
-    // Save the handle and update settings
-    directoryHandle = handle;
-    await saveDirectoryHandle(handle);
-    await saveSettings({
-      hasDirectoryAccess: true,
-      directoryPath: handle.name
-    });
-
-    currentSettings.hasDirectoryAccess = true;
-    currentSettings.directoryPath = handle.name;
-
-    console.log('[Trade Plan Saver Popup] Directory saved successfully');
-
-    // Update UI
-    updateUI();
-
-    // Show success feedback
-    showSuccess('Directory selected successfully');
-
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      console.log('[Trade Plan Saver Popup] Directory selection cancelled');
-    } else {
-      console.error('[Trade Plan Saver Popup] Directory selection error:', error);
-      showError('Failed to select directory: ' + error.message);
-    }
-  } finally {
-    // Re-enable button
-    selectDirBtn.disabled = false;
-    selectDirBtn.textContent = 'Select Save Directory';
-    selectDirBtn.classList.remove('pulsing');
-  }
 }
 
 /**
@@ -185,7 +90,7 @@ async function handleToggleCapture() {
 
     // Show feedback
     if (newEnabledState) {
-      showSuccess('Capture enabled - trade plans will be saved automatically');
+      showSuccess('Capture enabled - trade plans will be saved to Downloads folder');
     } else {
       showSuccess('Capture disabled');
     }
@@ -197,11 +102,10 @@ async function handleToggleCapture() {
 }
 
 /**
- * Show success message (simple console log for now)
+ * Show success message
  */
 function showSuccess(message) {
   console.log('[Trade Plan Saver Popup] SUCCESS:', message);
-  // Could add visual feedback here (e.g., toast notification)
 }
 
 /**
@@ -209,7 +113,7 @@ function showSuccess(message) {
  */
 function showError(message) {
   console.error('[Trade Plan Saver Popup] ERROR:', message);
-  alert(message); // Simple alert for now
+  alert(message);
 }
 
 // Initialize when popup opens

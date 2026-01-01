@@ -283,3 +283,21 @@ if (permission !== 'granted') {
   - Helps diagnose permission degradation between popup and background contexts
   - Investigating why permission shows "granted" in popup but "prompt" in background
 - Updated version to 1.0.7 in manifest.json and popup.html
+
+### 2026-01-01 - v1.0.8 - MAJOR: Switch to Chrome Downloads API
+- **BREAKING CHANGE**: Switched from File System Access API to Chrome Downloads API
+  - Solves permission degradation issues between popup and background contexts
+  - Files now save to user's Downloads folder (not custom directory)
+  - No permission dialogs or persistent permission issues
+  - Simpler, more reliable implementation
+- **Changes**:
+  - Rewrote `file-saver.js` to use `chrome.downloads.download()` API
+  - Added `downloads` permission to manifest.json
+  - Removed File System Access API code (directory selection, IndexedDB storage)
+  - Simplified `storage-manager.js` - removed IndexedDB, only stores `isEnabled` flag
+  - Simplified popup UI - removed directory selection button
+  - Updated popup to show "Downloads Folder" as save location
+  - Updated notification message to indicate "Saved to Downloads"
+  - Removed all directory permission error handling
+- **User Impact**: Files automatically save to Downloads folder with proper naming
+- Updated version to 1.0.8 in manifest.json and popup.html

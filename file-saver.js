@@ -1,6 +1,4 @@
-// File Saver - Handles File System Access API and filename generation
-
-import { getDirectoryHandle } from './storage-manager.js';
+// File Saver - Handles Chrome Downloads API and filename generation
 
 /**
  * Generate filename from trade plan data
@@ -30,80 +28,66 @@ export function generateFilename(ticker, timestamp) {
 }
 
 /**
- * Verify file system permissions
- * Note: Cannot request permission from background - must be done from popup with user gesture
- * @param {FileSystemDirectoryHandle} dirHandle - Directory handle
- * @returns {Promise<boolean>} True if permission granted
- */
-async function verifyPermission(dirHandle) {
-  try {
-    const permission = await dirHandle.queryPermission({ mode: 'readwrite' });
-    console.log('[File Saver] Permission status:', permission);
-
-    // Only return true if explicitly granted
-    // Do NOT try to request permission here - only works from user gesture (popup)
-    return permission === 'granted';
-  } catch (error) {
-    console.error('[File Saver] Permission verification failed:', error);
-    return false;
-  }
-}
-
-/**
- * Save trade plan JSON to file
+ * Save trade plan JSON to Downloads folder using Chrome Downloads API
  * @param {Object} data - Trade plan JSON data
  * @param {number} timestamp - Timestamp when data was captured
  * @returns {Promise<Object>} Result object with success status and filename
  */
 export async function saveTradePlan(data, timestamp) {
   try {
-    // Get the stored directory handle
-    const dirHandle = await getDirectoryHandle();
-
-    console.log('[File Saver] Retrieved handle from IndexedDB:', dirHandle);
-    console.log('[File Saver] Handle type:', dirHandle?.constructor?.name);
-    console.log('[File Saver] Handle kind:', dirHandle?.kind);
-    console.log('[File Saver] Handle name:', dirHandle?.name);
-
-    if (!dirHandle) {
-      throw new Error('No directory handle available. Please select a save directory first.');
-    }
-
-    // Verify we still have permission
-    const hasPermission = await verifyPermission(dirHandle);
-
-    if (!hasPermission) {
-      throw new Error('Directory access denied. Please select the directory again.');
-    }
-
     // Extract ticker from data
     const ticker = data.ticker || 'UNKNOWN';
 
     // Generate filename
     const filename = generateFilename(ticker, timestamp);
 
-    // Create file handle (will create or overwrite)
-    const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
-
-    // Create writable stream
-    const writable = await fileHandle.createWritable();
-
-    // Write JSON data (pretty printed)
+    // Convert JSON to blob
     const jsonContent = JSON.stringify(data, null, 2);
-    await writable.write(jsonContent);
-    await writable.close();
+    const blob = new Blob([jsonContent], { type: 'application/json' });
 
-    console.log(`Trade plan saved successfully: ${filename}`);
+    // Create object URL for the blob
+    const url = URL.createObjectURL(blob);
+
+    console.log('[File Saver] Downloading file:', filename);
+
+    // Download using Chrome Downloads API
+    const downloadId = await new Promise((resolve, reject) => {
+      chrome.downloads.download(
+        {
+          url: url,
+          filename: filename,
+          saveAs: false, // Auto-save to Downloads folder
+          conflictAction: 'uniquify' // Add (1), (2), etc. if file exists
+        },
+        (id) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            resolve(id);
+          }
+        }
+      );
+    });
+
+    console.log('[File Saver] Download initiated with ID:', downloadId);
+
+    // Wait a moment then revoke the object URL to free memory
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
+
+    console.log(`[File Saver] Trade plan saved successfully: ${filename}`);
 
     return {
       success: true,
       filename: filename,
       ticker: ticker,
-      timestamp: timestamp
+      timestamp: timestamp,
+      downloadId: downloadId
     };
 
   } catch (error) {
-    console.error('Failed to save trade plan:', error);
+    console.error('[File Saver] Failed to save trade plan:', error);
 
     return {
       success: false,
