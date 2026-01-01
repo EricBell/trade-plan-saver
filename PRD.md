@@ -251,3 +251,11 @@ if (permission !== 'granted') {
   - MAIN world intercepts requests → posts message → ISOLATED world forwards to background
 - Updated manifest.json to include both content scripts with different world contexts
 - Updated version to 1.0.3 in manifest.json and popup.html
+
+### 2026-01-01 - v1.0.4 - Fix State Sync Issue
+- **CRITICAL FIX**: Fixed service worker state synchronization issue
+  - Background script was using stale in-memory `isEnabled` variable
+  - Changed to check `chrome.storage.local` directly on each capture attempt
+  - Prevents "disabled" responses when extension is actually enabled
+  - Ensures state is always current even after service worker restart
+- Updated version to 1.0.4 in manifest.json and popup.html

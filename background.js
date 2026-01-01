@@ -85,8 +85,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 async function handleTradePlanCapture(data, timestamp) {
   console.log('[Trade Plan Saver] Processing trade plan capture...');
 
-  // Check if capture is enabled
-  if (!isEnabled) {
+  // Check if capture is enabled (check storage directly to avoid stale state)
+  const settings = await getSettings();
+  console.log('[Trade Plan Saver] Current settings:', settings);
+
+  if (!settings.isEnabled) {
     console.log('[Trade Plan Saver] Capture disabled, ignoring');
     return { success: false, reason: 'disabled' };
   }
