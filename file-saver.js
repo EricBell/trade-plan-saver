@@ -30,23 +30,21 @@ export function generateFilename(ticker, timestamp) {
 }
 
 /**
- * Verify and request file system permissions
+ * Verify file system permissions
+ * Note: Cannot request permission from background - must be done from popup with user gesture
  * @param {FileSystemDirectoryHandle} dirHandle - Directory handle
  * @returns {Promise<boolean>} True if permission granted
  */
 async function verifyPermission(dirHandle) {
   try {
     const permission = await dirHandle.queryPermission({ mode: 'readwrite' });
+    console.log('[File Saver] Permission status:', permission);
 
-    if (permission === 'granted') {
-      return true;
-    }
-
-    // Request permission if not granted
-    const requestResult = await dirHandle.requestPermission({ mode: 'readwrite' });
-    return requestResult === 'granted';
+    // Only return true if explicitly granted
+    // Do NOT try to request permission here - only works from user gesture (popup)
+    return permission === 'granted';
   } catch (error) {
-    console.error('Permission verification failed:', error);
+    console.error('[File Saver] Permission verification failed:', error);
     return false;
   }
 }

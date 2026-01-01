@@ -259,3 +259,12 @@ if (permission !== 'granted') {
   - Prevents "disabled" responses when extension is actually enabled
   - Ensures state is always current even after service worker restart
 - Updated version to 1.0.4 in manifest.json and popup.html
+
+### 2026-01-01 - v1.0.5 - Improved Permission Error Handling
+- **FIX**: Improved handling of expired File System Access permissions
+  - Removed auto-request permission from background (only works from user gesture)
+  - Added automatic clearing of stale directory state when permission denied
+  - Enhanced notification messages to guide user to reselect directory
+  - Background script now clears `hasDirectoryAccess` flag on permission errors
+  - More helpful error notifications with clear next steps for user
+- Updated version to 1.0.5 in manifest.json and popup.html

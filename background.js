@@ -114,6 +114,11 @@ async function handleTradePlanCapture(data, timestamp) {
   if (result.success) {
     showNotification('success', result.filename);
   } else {
+    // If permission denied, clear the stale directory state
+    if (result.error && result.error.includes('denied')) {
+      console.log('[Trade Plan Saver] Permission denied, clearing directory state');
+      await saveSettings({ hasDirectoryAccess: false, directoryPath: null });
+    }
     showNotification('error', result.error);
   }
 
@@ -124,12 +129,27 @@ async function handleTradePlanCapture(data, timestamp) {
  * Show notification to user
  */
 function showNotification(type, message) {
+  let title, fullMessage;
+
+  if (type === 'success') {
+    title = 'Trade Plan Saved';
+    fullMessage = message;
+  } else {
+    title = 'Save Failed';
+    // Make permission errors more helpful
+    if (message.includes('denied') || message.includes('access')) {
+      fullMessage = 'Directory access expired. Click the extension icon and reselect your save directory.';
+    } else {
+      fullMessage = message;
+    }
+  }
+
   const notificationOptions = {
     type: 'basic',
     iconUrl: 'icons/icon48.png',
-    title: type === 'success' ? 'Trade Plan Saved' : 'Save Failed',
-    message: message,
-    priority: 1
+    title: title,
+    message: fullMessage,
+    priority: 2
   };
 
   chrome.notifications.create('', notificationOptions, (notificationId) => {
