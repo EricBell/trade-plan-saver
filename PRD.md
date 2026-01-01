@@ -276,3 +276,10 @@ if (permission !== 'granted') {
   - Validate that permission is persisted before saving handle
   - Better error messages if permission cannot be persisted
 - Updated version to 1.0.6 in manifest.json and popup.html
+
+### 2026-01-01 - v1.0.7 - Debug Handle Retrieval
+- **DEBUG**: Added detailed logging for IndexedDB handle retrieval in background
+  - Logs handle object type, kind, and name when retrieved
+  - Helps diagnose permission degradation between popup and background contexts
+  - Investigating why permission shows "granted" in popup but "prompt" in background
+- Updated version to 1.0.7 in manifest.json and popup.html

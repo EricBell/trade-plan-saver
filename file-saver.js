@@ -60,6 +60,11 @@ export async function saveTradePlan(data, timestamp) {
     // Get the stored directory handle
     const dirHandle = await getDirectoryHandle();
 
+    console.log('[File Saver] Retrieved handle from IndexedDB:', dirHandle);
+    console.log('[File Saver] Handle type:', dirHandle?.constructor?.name);
+    console.log('[File Saver] Handle kind:', dirHandle?.kind);
+    console.log('[File Saver] Handle name:', dirHandle?.name);
+
     if (!dirHandle) {
       throw new Error('No directory handle available. Please select a save directory first.');
     }
