@@ -5,7 +5,8 @@
 
   const TARGET_URL_PATTERN = 'ttghg.onrender.com/api/v1/trade-plan';
 
-  console.log('[Trade Plan Saver] Content script loaded');
+  console.log('[Trade Plan Saver] Content script loaded at:', window.location.href);
+  console.log('[Trade Plan Saver] Looking for URL pattern:', TARGET_URL_PATTERN);
 
   /**
    * Check if URL matches the trade plan endpoint
@@ -15,7 +16,14 @@
 
     // Handle both string URLs and Request objects
     const urlString = typeof url === 'string' ? url : url.url;
-    return urlString.includes(TARGET_URL_PATTERN);
+    const matches = urlString.includes(TARGET_URL_PATTERN);
+
+    // Log ALL requests for debugging
+    if (urlString.includes('trade-plan') || urlString.includes('ttghg')) {
+      console.log('[Trade Plan Saver] Checking URL:', urlString, '- Matches:', matches);
+    }
+
+    return matches;
   }
 
   /**
@@ -43,21 +51,27 @@
   // ========== Intercept Fetch API ==========
 
   const originalFetch = window.fetch;
+  let fetchCount = 0;
 
   window.fetch = async function(...args) {
-    const response = await originalFetch.apply(this, args);
+    fetchCount++;
     const url = args[0];
+    const urlString = typeof url === 'string' ? url : url.url;
+
+    console.log(`[Trade Plan Saver] Fetch #${fetchCount}:`, urlString);
+
+    const response = await originalFetch.apply(this, args);
 
     // Check if this is our target URL
     if (isTargetUrl(url)) {
-      console.log('[Trade Plan Saver] Trade plan request detected (fetch):', url);
+      console.log('[Trade Plan Saver] ✅ TRADE PLAN REQUEST DETECTED (fetch):', url);
 
       try {
         // Clone response to avoid consuming the original
         const clonedResponse = response.clone();
         const data = await clonedResponse.json();
 
-        console.log('[Trade Plan Saver] Trade plan data captured:', data);
+        console.log('[Trade Plan Saver] ✅ TRADE PLAN DATA CAPTURED:', data);
         sendToBackground(data, typeof url === 'string' ? url : url.url);
 
       } catch (error) {
@@ -72,22 +86,27 @@
 
   const originalOpen = XMLHttpRequest.prototype.open;
   const originalSend = XMLHttpRequest.prototype.send;
+  let xhrCount = 0;
 
   XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+    xhrCount++;
     this._url = url;
     this._method = method;
+    this._xhrId = xhrCount;
+    console.log(`[Trade Plan Saver] XHR #${xhrCount} open:`, method, url);
     return originalOpen.call(this, method, url, ...rest);
   };
 
   XMLHttpRequest.prototype.send = function(...args) {
     if (isTargetUrl(this._url)) {
-      console.log('[Trade Plan Saver] Trade plan request detected (XHR):', this._url);
+      console.log('[Trade Plan Saver] ✅ TRADE PLAN REQUEST DETECTED (XHR):', this._url);
 
       this.addEventListener('load', function() {
+        console.log(`[Trade Plan Saver] XHR #${this._xhrId} load event - status:`, this.status);
         if (this.status >= 200 && this.status < 300) {
           try {
             const data = JSON.parse(this.responseText);
-            console.log('[Trade Plan Saver] Trade plan data captured:', data);
+            console.log('[Trade Plan Saver] ✅ TRADE PLAN DATA CAPTURED:', data);
             sendToBackground(data, this._url);
           } catch (error) {
             console.error('[Trade Plan Saver] Failed to parse XHR response:', error);
@@ -99,6 +118,7 @@
     return originalSend.apply(this, args);
   };
 
-  console.log('[Trade Plan Saver] Fetch and XMLHttpRequest interceptors installed');
+  console.log('[Trade Plan Saver] ✅ Fetch and XMLHttpRequest interceptors installed');
+  console.log('[Trade Plan Saver] Interceptors ready at:', new Date().toISOString());
 
 })();
