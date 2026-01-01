@@ -268,3 +268,11 @@ if (permission !== 'granted') {
   - Background script now clears `hasDirectoryAccess` flag on permission errors
   - More helpful error notifications with clear next steps for user
 - Updated version to 1.0.5 in manifest.json and popup.html
+
+### 2026-01-01 - v1.0.6 - Enhanced Permission Verification
+- **FIX**: Added detailed permission verification and logging in popup
+  - Double-check permission status after requesting to ensure it's actually granted
+  - Added comprehensive logging of permission states at each step
+  - Validate that permission is persisted before saving handle
+  - Better error messages if permission cannot be persisted
+- Updated version to 1.0.6 in manifest.json and popup.html

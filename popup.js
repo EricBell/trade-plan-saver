@@ -97,17 +97,28 @@ async function handleSelectDirectory() {
     console.log('[Trade Plan Saver Popup] Directory selected:', handle.name);
 
     // Verify we have permission
-    const permission = await handle.queryPermission({ mode: 'readwrite' });
+    let permission = await handle.queryPermission({ mode: 'readwrite' });
     console.log('[Trade Plan Saver Popup] Initial permission:', permission);
 
     if (permission !== 'granted') {
+      console.log('[Trade Plan Saver Popup] Requesting permission...');
       const request = await handle.requestPermission({ mode: 'readwrite' });
-      console.log('[Trade Plan Saver Popup] Requested permission:', request);
+      console.log('[Trade Plan Saver Popup] Requested permission result:', request);
 
       if (request !== 'granted') {
-        throw new Error('Directory access denied');
+        throw new Error('Directory access denied. Please allow access in the Chrome dialog.');
+      }
+
+      // Verify permission was actually granted
+      permission = await handle.queryPermission({ mode: 'readwrite' });
+      console.log('[Trade Plan Saver Popup] Final permission after request:', permission);
+
+      if (permission !== 'granted') {
+        throw new Error('Permission not persisted. Chrome may not support persistent directory access on this system.');
       }
     }
+
+    console.log('[Trade Plan Saver Popup] ✅ Permission verified as GRANTED');
 
     // Save the handle and update settings
     directoryHandle = handle;
