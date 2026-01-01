@@ -41,12 +41,10 @@ export async function saveTradePlan(data, timestamp) {
     // Generate filename
     const filename = generateFilename(ticker, timestamp);
 
-    // Convert JSON to blob
+    // Convert JSON to base64 data URL (works in service worker)
     const jsonContent = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonContent], { type: 'application/json' });
-
-    // Create object URL for the blob
-    const url = URL.createObjectURL(blob);
+    const base64Content = btoa(unescape(encodeURIComponent(jsonContent)));
+    const dataUrl = `data:application/json;base64,${base64Content}`;
 
     console.log('[File Saver] Downloading file:', filename);
 
@@ -54,7 +52,7 @@ export async function saveTradePlan(data, timestamp) {
     const downloadId = await new Promise((resolve, reject) => {
       chrome.downloads.download(
         {
-          url: url,
+          url: dataUrl,
           filename: filename,
           saveAs: false, // Auto-save to Downloads folder
           conflictAction: 'uniquify' // Add (1), (2), etc. if file exists
@@ -70,11 +68,6 @@ export async function saveTradePlan(data, timestamp) {
     });
 
     console.log('[File Saver] Download initiated with ID:', downloadId);
-
-    // Wait a moment then revoke the object URL to free memory
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 1000);
 
     console.log(`[File Saver] Trade plan saved successfully: ${filename}`);
 

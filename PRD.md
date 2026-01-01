@@ -301,3 +301,11 @@ if (permission !== 'granted') {
   - Removed all directory permission error handling
 - **User Impact**: Files automatically save to Downloads folder with proper naming
 - Updated version to 1.0.8 in manifest.json and popup.html
+
+### 2026-01-01 - v1.0.9 - Fix Service Worker Data URL
+- **CRITICAL FIX**: Fixed `URL.createObjectURL is not a function` error in service worker
+  - Service workers don't support `URL.createObjectURL()` for blob URLs
+  - Changed to use base64-encoded data URLs instead
+  - Uses `btoa(unescape(encodeURIComponent(jsonContent)))` for proper UTF-8 encoding
+  - Data URLs work reliably in service worker context for chrome.downloads API
+- Updated version to 1.0.9 in manifest.json and popup.html
