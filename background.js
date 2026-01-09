@@ -129,13 +129,21 @@ async function handleTradePlanCapture(data, timestamp) {
   // Show notification based on result
   if (result.success) {
     // Play audio beep if enabled
+    console.log('[Trade Plan Saver] File saved successfully, checking audio settings...');
+    console.log('[Trade Plan Saver] audioBeepEnabled:', settings.audioBeepEnabled);
+    console.log('[Trade Plan Saver] audioBeepVolume:', settings.audioBeepVolume);
+
     if (settings.audioBeepEnabled) {
       try {
+        console.log('[Trade Plan Saver] Calling playBeep...');
         await playBeep(settings.audioBeepVolume);
+        console.log('[Trade Plan Saver] playBeep completed');
       } catch (error) {
         console.error('[Trade Plan Saver] Audio beep failed:', error);
         // Don't block on audio errors
       }
+    } else {
+      console.log('[Trade Plan Saver] Audio beep disabled, skipping');
     }
 
     showNotification('success', `Saved to Downloads: ${result.filename}`);

@@ -80,11 +80,14 @@ async function playBeep(volume = 0.7) {
  * Listen for messages from service worker
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('[Offscreen] Message received:', message.type, 'from:', sender);
+
   if (message.type === 'PLAY_BEEP_OFFSCREEN') {
     console.log('[Offscreen] Received beep request, volume:', message.volume);
 
     playBeep(message.volume)
       .then(() => {
+        console.log('[Offscreen] Beep playback completed successfully');
         sendResponse({ success: true });
       })
       .catch((error) => {
@@ -94,6 +97,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     return true; // Keep message channel open for async response
   }
+
+  console.log('[Offscreen] Message not handled:', message.type);
+  return false;
 });
 
 console.log('[Offscreen] Audio offscreen document initialized');
