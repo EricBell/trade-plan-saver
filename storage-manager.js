@@ -19,7 +19,9 @@ export async function saveSettings(settings) {
  */
 export async function getSettings() {
   const defaults = {
-    isEnabled: false
+    isEnabled: false,
+    audioBeepEnabled: true,
+    audioBeepVolume: 0.7
   };
 
   try {

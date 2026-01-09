@@ -218,3 +218,115 @@ code {
 .pulsing {
   animation: pulse 1.5s ease-in-out infinite;
 }
+
+/* Audio Settings Section */
+.audio-section {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 0 20px 16px 20px;
+}
+
+.audio-header {
+  font-weight: 600;
+  font-size: 14px;
+  color: #2c3e50;
+  margin-bottom: 12px;
+}
+
+.audio-control {
+  margin-bottom: 12px;
+}
+
+.audio-toggle {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.audio-toggle input[type="checkbox"] {
+  margin-right: 8px;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+/* Volume Control */
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.volume-label {
+  font-size: 13px;
+  color: #555;
+  min-width: 60px;
+}
+
+#volume-slider {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: #ddd;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+#volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3498db;
+  cursor: pointer;
+}
+
+#volume-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3498db;
+  cursor: pointer;
+  border: none;
+}
+
+.volume-value {
+  font-size: 13px;
+  color: #555;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Test Button */
+.audio-test {
+  margin-top: 8px;
+}
+
+.btn-test {
+  width: 100%;
+  padding: 8px;
+  font-size: 13px;
+  background: #95a5a6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-test:hover:not(:disabled) {
+  background: #7f8c8d;
+}
+
+.btn-test:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn-test:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

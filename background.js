@@ -2,6 +2,7 @@
 
 import { getSettings, saveSettings } from './storage-manager.js';
 import { saveTradePlan } from './file-saver.js';
+import { playBeep } from './audio-utils.js';
 
 // Track current state (loaded from storage on startup)
 let isEnabled = false;
@@ -76,6 +77,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // Keep message channel open for async response
   }
 
+  // Handle test beep from popup
+  if (message.type === 'PLAY_TEST_BEEP') {
+    getSettings()
+      .then(settings => {
+        return playBeep(settings.audioBeepVolume);
+      })
+      .then(() => sendResponse({ success: true }))
+      .catch(error => {
+        console.error('[Trade Plan Saver] Test beep error:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+
+    return true; // Keep channel open for async response
+  }
+
   return false;
 });
 
@@ -112,6 +128,16 @@ async function handleTradePlanCapture(data, timestamp) {
 
   // Show notification based on result
   if (result.success) {
+    // Play audio beep if enabled
+    if (settings.audioBeepEnabled) {
+      try {
+        await playBeep(settings.audioBeepVolume);
+      } catch (error) {
+        console.error('[Trade Plan Saver] Audio beep failed:', error);
+        // Don't block on audio errors
+      }
+    }
+
     showNotification('success', `Saved to Downloads: ${result.filename}`);
   } else {
     showNotification('error', result.error);

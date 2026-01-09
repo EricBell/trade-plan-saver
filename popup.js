@@ -8,6 +8,10 @@ let currentSettings = null;
 // DOM Elements
 const statusEl = document.getElementById('status');
 const toggleBtn = document.getElementById('toggle-btn');
+const audioBeepToggle = document.getElementById('audio-beep-toggle');
+const volumeSlider = document.getElementById('volume-slider');
+const volumeDisplay = document.getElementById('volume-display');
+const testBeepBtn = document.getElementById('test-beep-btn');
 
 /**
  * Initialize popup
@@ -50,6 +54,12 @@ function updateUI() {
     toggleBtn.textContent = 'Enable Capture';
     toggleBtn.className = 'btn btn-primary';
   }
+
+  // Update audio settings UI
+  audioBeepToggle.checked = currentSettings.audioBeepEnabled;
+  const volumePercent = Math.round(currentSettings.audioBeepVolume * 100);
+  volumeSlider.value = volumePercent;
+  volumeDisplay.textContent = volumePercent + '%';
 }
 
 /**
@@ -57,6 +67,9 @@ function updateUI() {
  */
 function attachEventListeners() {
   toggleBtn.addEventListener('click', handleToggleCapture);
+  audioBeepToggle.addEventListener('change', handleAudioBeepToggle);
+  volumeSlider.addEventListener('input', handleVolumeChange);
+  testBeepBtn.addEventListener('click', handleTestBeep);
 }
 
 /**
@@ -114,6 +127,74 @@ function showSuccess(message) {
 function showError(message) {
   console.error('[Trade Plan Saver Popup] ERROR:', message);
   alert(message);
+}
+
+/**
+ * Handle audio beep toggle
+ */
+async function handleAudioBeepToggle() {
+  console.log('[Trade Plan Saver Popup] Audio beep toggle changed');
+
+  try {
+    const newState = audioBeepToggle.checked;
+    await saveSettings({ audioBeepEnabled: newState });
+    currentSettings.audioBeepEnabled = newState;
+
+    console.log('[Trade Plan Saver Popup] Audio beep:', newState ? 'enabled' : 'disabled');
+  } catch (error) {
+    console.error('[Trade Plan Saver Popup] Audio toggle error:', error);
+    showError('Failed to update audio setting');
+  }
+}
+
+/**
+ * Handle volume slider change
+ */
+async function handleVolumeChange() {
+  const volumePercent = parseInt(volumeSlider.value);
+  volumeDisplay.textContent = volumePercent + '%';
+
+  // Convert 0-100 to 0-1.0
+  const volumeValue = volumePercent / 100;
+
+  try {
+    await saveSettings({ audioBeepVolume: volumeValue });
+    currentSettings.audioBeepVolume = volumeValue;
+
+    console.log('[Trade Plan Saver Popup] Volume updated:', volumePercent + '%');
+  } catch (error) {
+    console.error('[Trade Plan Saver Popup] Volume update error:', error);
+  }
+}
+
+/**
+ * Handle test beep button
+ */
+async function handleTestBeep() {
+  console.log('[Trade Plan Saver Popup] Test beep clicked');
+
+  testBeepBtn.disabled = true;
+  testBeepBtn.textContent = 'Playing...';
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: 'PLAY_TEST_BEEP'
+    });
+
+    if (response.success) {
+      console.log('[Trade Plan Saver Popup] Test beep played successfully');
+    } else {
+      showError('Test beep failed: ' + response.error);
+    }
+  } catch (error) {
+    console.error('[Trade Plan Saver Popup] Test beep error:', error);
+    showError('Failed to play test beep');
+  } finally {
+    setTimeout(() => {
+      testBeepBtn.disabled = false;
+      testBeepBtn.textContent = 'Test Beep';
+    }, 600);
+  }
 }
 
 // Initialize when popup opens

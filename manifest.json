@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Trade Plan Saver",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "Captures and saves trade plan JSON responses to Downloads folder",
 
   "permissions": [

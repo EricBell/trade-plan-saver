@@ -309,3 +309,20 @@ if (permission !== 'granted') {
   - Uses `btoa(unescape(encodeURIComponent(jsonContent)))` for proper UTF-8 encoding
   - Data URLs work reliably in service worker context for chrome.downloads API
 - Updated version to 1.0.9 in manifest.json and popup.html
+
+### 2026-01-09 - v1.1.0 - Audio Beep Notifications
+- **NEW FEATURE**: Added configurable audio beep notification when trade plans are successfully saved
+  - Plays a 440Hz (A4 note) sine wave beep for 500ms using Web Audio API
+  - Adjustable volume slider (0-100%) in popup settings
+  - Enable/disable toggle for audio notifications
+  - "Test Beep" button to preview sound and volume before capture
+  - Beep plays in service worker context using AudioContext and GainNode
+  - Non-blocking implementation - audio errors don't affect file saving
+- **Implementation**:
+  - Created `audio-utils.js` - Web Audio API utilities with programmatic tone generation
+  - Extended `storage-manager.js` with `audioBeepEnabled` (default: true) and `audioBeepVolume` (default: 0.7)
+  - Updated `background.js` to play beep after successful save with proper error handling
+  - Added `PLAY_TEST_BEEP` message handler in background for testing audio
+  - Added "Audio Notifications" section to popup UI with toggle, volume slider, and test button
+  - Added CSS styling for audio controls with custom slider styling
+- Updated version to 1.1.0 in manifest.json and popup.html
