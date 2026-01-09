@@ -1,18 +1,27 @@
-// Audio Utilities - Web Audio API implementation for service worker
-
-// Singleton AudioContext (lazy initialized)
-let audioContext = null;
+// Audio Utilities - Offscreen document approach for service worker audio
 
 /**
- * Get or create AudioContext
- * @returns {AudioContext}
+ * Create offscreen document for audio playback
+ * Service workers don't have access to AudioContext, so we use an offscreen document
  */
-function getAudioContext() {
-  if (!audioContext) {
-    audioContext = new AudioContext();
-    console.log('[Audio Utils] AudioContext created');
+async function createOffscreenDocument() {
+  // Check if offscreen document already exists
+  const existingContexts = await chrome.runtime.getContexts({
+    contextTypes: ['OFFSCREEN_DOCUMENT']
+  });
+
+  if (existingContexts.length > 0) {
+    return; // Already exists
   }
-  return audioContext;
+
+  // Create new offscreen document
+  await chrome.offscreen.createDocument({
+    url: 'offscreen.html',
+    reasons: ['AUDIO_PLAYBACK'],
+    justification: 'Play audio beep notification when trade plans are saved'
+  });
+
+  console.log('[Audio Utils] Offscreen document created');
 }
 
 /**
@@ -22,53 +31,16 @@ function getAudioContext() {
  */
 export async function playBeep(volume = 0.7) {
   try {
-    const context = getAudioContext();
+    // Ensure offscreen document exists
+    await createOffscreenDocument();
 
-    // Resume context if suspended (required in some cases)
-    if (context.state === 'suspended') {
-      await context.resume();
-    }
-
-    // Create oscillator for beep tone (440Hz = A4 note)
-    const oscillator = context.createOscillator();
-    oscillator.type = 'sine';
-    oscillator.frequency.value = 440; // A4 note
-
-    // Create gain node for volume control
-    const gainNode = context.createGain();
-    gainNode.gain.value = Math.max(0, Math.min(1.0, volume)); // Clamp 0-1.0
-
-    // Connect nodes: oscillator -> gain -> destination
-    oscillator.connect(gainNode);
-    gainNode.connect(context.destination);
-
-    // Schedule beep: 500ms duration with fade in/out to avoid clicks
-    const now = context.currentTime;
-    const duration = 0.5; // 500ms
-    const fadeTime = 0.01; // 10ms fade
-
-    // Fade in
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(volume, now + fadeTime);
-
-    // Fade out
-    gainNode.gain.setValueAtTime(volume, now + duration - fadeTime);
-    gainNode.gain.linearRampToValueAtTime(0, now + duration);
-
-    // Start and stop
-    oscillator.start(now);
-    oscillator.stop(now + duration);
-
-    console.log(`[Audio Utils] Beep played at ${Math.round(volume * 100)}% volume`);
-
-    // Return promise that resolves when beep finishes
-    return new Promise((resolve) => {
-      oscillator.onended = () => {
-        oscillator.disconnect();
-        gainNode.disconnect();
-        resolve();
-      };
+    // Send message to offscreen document to play beep
+    await chrome.runtime.sendMessage({
+      type: 'PLAY_BEEP_OFFSCREEN',
+      volume: volume
     });
+
+    console.log(`[Audio Utils] Beep request sent at ${Math.round(volume * 100)}% volume`);
 
   } catch (error) {
     console.error('[Audio Utils] Beep playback error:', error);

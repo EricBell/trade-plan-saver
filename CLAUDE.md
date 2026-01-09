@@ -37,6 +37,11 @@ Chrome extension (Manifest V3) that captures JSON responses from `https://ttghg.
    - Include the new version number in the changelog entry
    - This ensures the PRD stays synchronized with the actual implementation
 
+3. **Bump minor version after completion**: After every change you announce to the user as complete, bump up the minor version number (second number)
+   - Example: `1.2.0` → `1.3.0`
+   - This applies to all completed work announcements
+   - Update both `manifest.json` and `popup.html` with the new version
+
 ## Development Setup
 
 ### Loading Extension in Chrome

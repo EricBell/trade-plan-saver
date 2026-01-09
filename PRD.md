@@ -326,3 +326,24 @@ if (permission !== 'granted') {
   - Added "Audio Notifications" section to popup UI with toggle, volume slider, and test button
   - Added CSS styling for audio controls with custom slider styling
 - Updated version to 1.1.0 in manifest.json and popup.html
+
+### 2026-01-09 - v1.2.0 - Fix Audio Playback in Service Worker
+- **CRITICAL FIX**: Fixed "AudioContext is not defined" error in service worker
+  - Service workers don't have access to AudioContext API
+  - Implemented offscreen document approach using chrome.offscreen API
+  - Audio now plays in an offscreen DOM context where Web Audio API is available
+- **Implementation**:
+  - Updated `audio-utils.js` to create and manage offscreen document
+  - Created `offscreen.html` - Minimal HTML document for offscreen context
+  - Created `offscreen.js` - Contains Web Audio API implementation (moved from audio-utils.js)
+  - Background service worker sends `PLAY_BEEP_OFFSCREEN` message to offscreen document
+  - Offscreen document handles actual audio playback with AudioContext
+  - Added `"offscreen"` permission to manifest.json
+- Updated version to 1.2.0 in manifest.json and popup.html
+
+### 2026-01-09 - v1.3.0 - Documentation Update
+- **DOCUMENTATION**: Updated CLAUDE.md versioning guidelines
+  - Added new rule: Bump minor version after every completed change announcement
+  - Ensures consistent version increments for all completed work
+  - Example: 1.2.0 → 1.3.0 after work completion
+- Updated version to 1.3.0 in manifest.json and popup.html
