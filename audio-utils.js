@@ -1,5 +1,8 @@
 // Audio Utilities - Offscreen document approach for service worker audio
 
+// Debug mode - set to false to reduce console logging
+const DEBUG = false;
+
 /**
  * Create offscreen document for audio playback
  * Service workers don't have access to AudioContext, so we use an offscreen document
@@ -12,11 +15,11 @@ async function createOffscreenDocument() {
     });
 
     if (existingContexts.length > 0) {
-      console.log('[Audio Utils] Offscreen document already exists');
+      if (DEBUG) console.log('[Audio Utils] Offscreen document already exists');
       return; // Already exists
     }
 
-    console.log('[Audio Utils] Creating new offscreen document...');
+    if (DEBUG) console.log('[Audio Utils] Creating new offscreen document...');
 
     // Create new offscreen document
     await chrome.offscreen.createDocument({
@@ -25,14 +28,14 @@ async function createOffscreenDocument() {
       justification: 'Play audio beep notification when trade plans are saved'
     });
 
-    console.log('[Audio Utils] Offscreen document created successfully');
+    if (DEBUG) console.log('[Audio Utils] Offscreen document created successfully');
 
     // Give it a moment to initialize
     await new Promise(resolve => setTimeout(resolve, 100));
 
   } catch (error) {
     // Document might already exist from a previous call
-    console.log('[Audio Utils] Offscreen document creation warning:', error.message);
+    if (DEBUG) console.log('[Audio Utils] Offscreen document creation warning:', error.message);
   }
 }
 
@@ -43,11 +46,11 @@ async function createOffscreenDocument() {
  */
 export async function playBeep(volume = 0.7) {
   try {
-    console.log(`[Audio Utils] playBeep called with volume: ${volume}`);
+    if (DEBUG) console.log(`[Audio Utils] playBeep called with volume: ${volume}`);
 
     // Ensure offscreen document exists
     await createOffscreenDocument();
-    console.log('[Audio Utils] Offscreen document ready');
+    if (DEBUG) console.log('[Audio Utils] Offscreen document ready');
 
     // Send message to offscreen document to play beep
     const response = await chrome.runtime.sendMessage({
@@ -55,7 +58,7 @@ export async function playBeep(volume = 0.7) {
       volume: volume
     });
 
-    console.log(`[Audio Utils] Beep request sent at ${Math.round(volume * 100)}% volume, response:`, response);
+    if (DEBUG) console.log(`[Audio Utils] Beep request sent at ${Math.round(volume * 100)}% volume, response:`, response);
 
     if (!response || !response.success) {
       console.warn('[Audio Utils] Beep may not have played successfully');

@@ -4,45 +4,48 @@ import { getSettings, saveSettings } from './storage-manager.js';
 import { saveTradePlan } from './file-saver.js';
 import { playBeep } from './audio-utils.js';
 
+// Debug mode - set to false to reduce console logging
+const DEBUG = false;
+
 // Track current state (loaded from storage on startup)
 let isEnabled = false;
 
-console.log('[Trade Plan Saver] Background service worker starting...');
+if (DEBUG) console.log('[Trade Plan Saver] Background service worker starting...');
 
 /**
  * Initialize extension on install
  */
 chrome.runtime.onInstalled.addListener(async (details) => {
-  console.log('[Trade Plan Saver] Extension installed:', details.reason);
+  if (DEBUG) console.log('[Trade Plan Saver] Extension installed:', details.reason);
 
   const settings = await getSettings();
   isEnabled = settings.isEnabled;
 
-  console.log('[Trade Plan Saver] Initial settings loaded:', settings);
+  if (DEBUG) console.log('[Trade Plan Saver] Initial settings loaded:', settings);
 });
 
 /**
  * Load state on browser startup
  */
 chrome.runtime.onStartup.addListener(async () => {
-  console.log('[Trade Plan Saver] Browser started, loading settings...');
+  if (DEBUG) console.log('[Trade Plan Saver] Browser started, loading settings...');
 
   const settings = await getSettings();
   isEnabled = settings.isEnabled;
 
-  console.log('[Trade Plan Saver] Settings loaded on startup:', settings);
+  if (DEBUG) console.log('[Trade Plan Saver] Settings loaded on startup:', settings);
 });
 
 /**
  * Handle messages from popup and content scripts
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('[Trade Plan Saver] Message received:', message.type, message);
+  if (DEBUG) console.log('[Trade Plan Saver] Message received:', message.type, message);
 
   // Handle toggle capture from popup
   if (message.type === 'TOGGLE_CAPTURE') {
     isEnabled = message.enabled;
-    console.log(`[Trade Plan Saver] Capture ${isEnabled ? 'enabled' : 'disabled'}`);
+    if (DEBUG) console.log(`[Trade Plan Saver] Capture ${isEnabled ? 'enabled' : 'disabled'}`);
 
     sendResponse({ success: true, enabled: isEnabled });
     return false;
@@ -99,14 +102,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  * Handle captured trade plan data
  */
 async function handleTradePlanCapture(data, timestamp) {
-  console.log('[Trade Plan Saver] Processing trade plan capture...');
+  if (DEBUG) console.log('[Trade Plan Saver] Processing trade plan capture...');
 
   // Check if capture is enabled (check storage directly to avoid stale state)
   const settings = await getSettings();
-  console.log('[Trade Plan Saver] Current settings:', settings);
+  if (DEBUG) console.log('[Trade Plan Saver] Current settings:', settings);
 
   if (!settings.isEnabled) {
-    console.log('[Trade Plan Saver] Capture disabled, ignoring');
+    if (DEBUG) console.log('[Trade Plan Saver] Capture disabled, ignoring');
     return { success: false, reason: 'disabled' };
   }
 
@@ -121,7 +124,7 @@ async function handleTradePlanCapture(data, timestamp) {
     console.warn('[Trade Plan Saver] Trade plan missing ticker field');
   }
 
-  console.log('[Trade Plan Saver] Saving trade plan for ticker:', data.ticker);
+  if (DEBUG) console.log('[Trade Plan Saver] Saving trade plan for ticker:', data.ticker);
 
   // Save the file
   const result = await saveTradePlan(data, timestamp);
@@ -129,21 +132,23 @@ async function handleTradePlanCapture(data, timestamp) {
   // Show notification based on result
   if (result.success) {
     // Play audio beep if enabled
-    console.log('[Trade Plan Saver] File saved successfully, checking audio settings...');
-    console.log('[Trade Plan Saver] audioBeepEnabled:', settings.audioBeepEnabled);
-    console.log('[Trade Plan Saver] audioBeepVolume:', settings.audioBeepVolume);
+    if (DEBUG) {
+      console.log('[Trade Plan Saver] File saved successfully, checking audio settings...');
+      console.log('[Trade Plan Saver] audioBeepEnabled:', settings.audioBeepEnabled);
+      console.log('[Trade Plan Saver] audioBeepVolume:', settings.audioBeepVolume);
+    }
 
     if (settings.audioBeepEnabled) {
       try {
-        console.log('[Trade Plan Saver] Calling playBeep...');
+        if (DEBUG) console.log('[Trade Plan Saver] Calling playBeep...');
         await playBeep(settings.audioBeepVolume);
-        console.log('[Trade Plan Saver] playBeep completed');
+        if (DEBUG) console.log('[Trade Plan Saver] playBeep completed');
       } catch (error) {
         console.error('[Trade Plan Saver] Audio beep failed:', error);
         // Don't block on audio errors
       }
     } else {
-      console.log('[Trade Plan Saver] Audio beep disabled, skipping');
+      if (DEBUG) console.log('[Trade Plan Saver] Audio beep disabled, skipping');
     }
 
     showNotification('success', `Saved to Downloads: ${result.filename}`);
@@ -170,9 +175,9 @@ function showNotification(type, message) {
     if (chrome.runtime.lastError) {
       console.error('[Trade Plan Saver] Notification error:', chrome.runtime.lastError);
     } else {
-      console.log('[Trade Plan Saver] Notification shown:', notificationId);
+      if (DEBUG) console.log('[Trade Plan Saver] Notification shown:', notificationId);
     }
   });
 }
 
-console.log('[Trade Plan Saver] Background service worker initialized');
+if (DEBUG) console.log('[Trade Plan Saver] Background service worker initialized');

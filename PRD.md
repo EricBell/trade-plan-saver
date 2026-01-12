@@ -359,3 +359,15 @@ if (permission !== 'granted') {
   - Audio beep plays when files are saved during capture
   - Requires both extension reload AND page refresh after updates
 - Updated version to 1.4.0 in manifest.json and popup.html
+
+### 2026-01-09 - v1.5.0 - Add Debug Mode Toggle
+- **FEATURE**: Added DEBUG mode flag to control console logging
+  - Added `const DEBUG = false` at top of `background.js`, `audio-utils.js`, and `offscreen.js`
+  - Set to `false` by default to reduce console pollution
+  - All debug/info logs now wrapped with `if (DEBUG)` conditional
+  - Error and warning logs remain always active (console.error, console.warn)
+  - To enable debugging: Set `const DEBUG = true` in any of the three files
+- **IMPROVEMENT**: Cleaner console output during normal operation
+  - Only critical errors and warnings shown by default
+  - Detailed logging available by toggling DEBUG flag when troubleshooting
+- Updated version to 1.5.0 in manifest.json and popup.html

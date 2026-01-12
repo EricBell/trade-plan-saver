@@ -1,6 +1,9 @@
 // Offscreen document for audio playback
 // This runs in a DOM context where AudioContext is available
 
+// Debug mode - set to false to reduce console logging
+const DEBUG = false;
+
 // Singleton AudioContext (lazy initialized)
 let audioContext = null;
 
@@ -10,7 +13,7 @@ let audioContext = null;
 function getAudioContext() {
   if (!audioContext) {
     audioContext = new AudioContext();
-    console.log('[Offscreen] AudioContext created');
+    if (DEBUG) console.log('[Offscreen] AudioContext created');
   }
   return audioContext;
 }
@@ -59,7 +62,7 @@ async function playBeep(volume = 0.7) {
     oscillator.start(now);
     oscillator.stop(now + duration);
 
-    console.log(`[Offscreen] Beep played at ${Math.round(volume * 100)}% volume`);
+    if (DEBUG) console.log(`[Offscreen] Beep played at ${Math.round(volume * 100)}% volume`);
 
     // Return promise that resolves when beep finishes
     return new Promise((resolve) => {
@@ -80,14 +83,14 @@ async function playBeep(volume = 0.7) {
  * Listen for messages from service worker
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('[Offscreen] Message received:', message.type, 'from:', sender);
+  if (DEBUG) console.log('[Offscreen] Message received:', message.type, 'from:', sender);
 
   if (message.type === 'PLAY_BEEP_OFFSCREEN') {
-    console.log('[Offscreen] Received beep request, volume:', message.volume);
+    if (DEBUG) console.log('[Offscreen] Received beep request, volume:', message.volume);
 
     playBeep(message.volume)
       .then(() => {
-        console.log('[Offscreen] Beep playback completed successfully');
+        if (DEBUG) console.log('[Offscreen] Beep playback completed successfully');
         sendResponse({ success: true });
       })
       .catch((error) => {
@@ -98,8 +101,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // Keep message channel open for async response
   }
 
-  console.log('[Offscreen] Message not handled:', message.type);
+  if (DEBUG) console.log('[Offscreen] Message not handled:', message.type);
   return false;
 });
 
-console.log('[Offscreen] Audio offscreen document initialized');
+if (DEBUG) console.log('[Offscreen] Audio offscreen document initialized');
