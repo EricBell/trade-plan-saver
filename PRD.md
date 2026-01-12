@@ -347,3 +347,15 @@ if (permission !== 'granted') {
   - Ensures consistent version increments for all completed work
   - Example: 1.2.0 → 1.3.0 after work completion
 - Updated version to 1.3.0 in manifest.json and popup.html
+
+### 2026-01-09 - v1.4.0 - Enhanced Audio Debugging and Testing
+- **IMPROVEMENT**: Added comprehensive logging throughout audio playback system
+  - Added detailed logging to `audio-utils.js` for offscreen document creation and message sending
+  - Added detailed logging to `background.js` for audio settings check during capture
+  - Added detailed logging to `offscreen.js` for message reception and playback status
+  - Improved offscreen document creation with better error handling and initialization delay
+- **TESTING**: Confirmed audio beep plays successfully on trade plan capture
+  - Test beep button works correctly
+  - Audio beep plays when files are saved during capture
+  - Requires both extension reload AND page refresh after updates
+- Updated version to 1.4.0 in manifest.json and popup.html
