@@ -21,7 +21,8 @@ export async function getSettings() {
   const defaults = {
     isEnabled: false,
     audioBeepEnabled: true,
-    audioBeepVolume: 0.7
+    audioBeepVolume: 0.7,
+    replayCaptureEnabled: false
   };
 
   try {

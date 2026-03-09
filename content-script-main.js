@@ -4,38 +4,41 @@
   'use strict';
 
   const TARGET_URL_PATTERN = 'ttghg.onrender.com/api/v1/trade-plan';
+  const REPLAY_URL_PATTERN = 'ttghg.onrender.com/api/v1/user/trade-plans/';
 
   console.log('[Trade Plan Saver MAIN] Content script loaded at:', window.location.href);
-  console.log('[Trade Plan Saver MAIN] Looking for URL pattern:', TARGET_URL_PATTERN);
+  console.log('[Trade Plan Saver MAIN] Looking for URL patterns:', TARGET_URL_PATTERN, REPLAY_URL_PATTERN);
 
   /**
-   * Check if URL matches the trade plan endpoint
+   * Determine capture type for a URL: 'live', 'replay', or null
    */
-  function isTargetUrl(url) {
-    if (!url) return false;
+  function getUrlCaptureType(url) {
+    if (!url) return null;
     const urlString = typeof url === 'string' ? url : url.url;
-    const matches = urlString.includes(TARGET_URL_PATTERN);
 
     if (urlString.includes('trade-plan') || urlString.includes('ttghg')) {
-      console.log('[Trade Plan Saver MAIN] Checking URL:', urlString, '- Matches:', matches);
+      console.log('[Trade Plan Saver MAIN] Checking URL:', urlString);
     }
 
-    return matches;
+    if (urlString.includes(REPLAY_URL_PATTERN)) return 'replay';
+    if (urlString.includes(TARGET_URL_PATTERN)) return 'live';
+    return null;
   }
 
   /**
    * Send captured data to isolated world via postMessage
    */
-  function sendToIsolatedWorld(data, url) {
+  function sendToIsolatedWorld(data, url, captureType) {
     try {
       window.postMessage({
         source: 'trade-plan-saver-main',
         type: 'TRADE_PLAN_CAPTURED',
         data: data,
         url: url,
+        captureType: captureType,
         timestamp: Date.now()
       }, '*');
-      console.log('[Trade Plan Saver MAIN] Posted message to isolated world');
+      console.log('[Trade Plan Saver MAIN] Posted message to isolated world, captureType:', captureType);
     } catch (error) {
       console.error('[Trade Plan Saver MAIN] Failed to post message:', error);
     }
@@ -55,15 +58,16 @@
 
     const response = await originalFetch.apply(this, args);
 
-    if (isTargetUrl(url)) {
-      console.log('[Trade Plan Saver MAIN] ✅ TRADE PLAN REQUEST DETECTED (fetch):', url);
+    const captureType = getUrlCaptureType(url);
+    if (captureType) {
+      console.log('[Trade Plan Saver MAIN] ✅ TRADE PLAN REQUEST DETECTED (fetch):', url, 'captureType:', captureType);
 
       try {
         const clonedResponse = response.clone();
         const data = await clonedResponse.json();
 
         console.log('[Trade Plan Saver MAIN] ✅ TRADE PLAN DATA CAPTURED:', data);
-        sendToIsolatedWorld(data, typeof url === 'string' ? url : url.url);
+        sendToIsolatedWorld(data, typeof url === 'string' ? url : url.url, captureType);
 
       } catch (error) {
         console.error('[Trade Plan Saver MAIN] Failed to parse response:', error);
@@ -89,8 +93,9 @@
   };
 
   XMLHttpRequest.prototype.send = function(...args) {
-    if (isTargetUrl(this._url)) {
-      console.log('[Trade Plan Saver MAIN] ✅ TRADE PLAN REQUEST DETECTED (XHR):', this._url);
+    const captureType = getUrlCaptureType(this._url);
+    if (captureType) {
+      console.log('[Trade Plan Saver MAIN] ✅ TRADE PLAN REQUEST DETECTED (XHR):', this._url, 'captureType:', captureType);
 
       this.addEventListener('load', function() {
         console.log(`[Trade Plan Saver MAIN] XHR #${this._xhrId} load event - status:`, this.status);
@@ -98,7 +103,7 @@
           try {
             const data = JSON.parse(this.responseText);
             console.log('[Trade Plan Saver MAIN] ✅ TRADE PLAN DATA CAPTURED:', data);
-            sendToIsolatedWorld(data, this._url);
+            sendToIsolatedWorld(data, this._url, captureType);
           } catch (error) {
             console.error('[Trade Plan Saver MAIN] Failed to parse XHR response:', error);
           }

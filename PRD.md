@@ -371,3 +371,19 @@ if (permission !== 'granted') {
   - Only critical errors and warnings shown by default
   - Detailed logging available by toggling DEBUG flag when troubleshooting
 - Updated version to 1.5.0 in manifest.json and popup.html
+
+### 2026-03-09 - v1.6.0 - One-Shot Replay Capture Feature
+- **FEATURE**: Added ability to capture trade plans from replay pages at `ttgct.onrender.com/plan?id=<UUID>`
+  - Replay pages fetch plan data from `ttghg.onrender.com/api/v1/user/trade-plans/<UUID>`
+  - New "Capture Next Replay" button in popup UI to arm one-shot replay capture
+  - Auto-disables after first successful capture (one-shot behavior)
+  - Button shows "Waiting for Replay..." while armed
+- **Implementation**:
+  - `content-script-main.js`: Added `REPLAY_URL_PATTERN`, replaced `isTargetUrl()` with `getUrlCaptureType()` returning `'live'`, `'replay'`, or `null`; both fetch and XHR interceptors now pass `captureType` in postMessage payload
+  - `storage-manager.js`: Added `replayCaptureEnabled: false` to defaults
+  - `background.js`: `handleTradePlanCapture()` now accepts `captureType`; replay path checks `replayCaptureEnabled`, auto-disables after save; added `TOGGLE_REPLAY_CAPTURE` message handler
+  - `popup.html`: Added `.replay-section` with button and info text
+  - `popup.js`: Added `replayBtn` reference, `handleReplayCaptureToggle()`, and `updateUI()` logic for replay state
+  - `popup.css`: Added styles for `.replay-section`, `.btn-replay`, and `.btn-replay.waiting`
+- Live capture (`isEnabled` toggle) is completely unaffected by this change
+- Updated version to 1.6.0 in manifest.json and popup.html

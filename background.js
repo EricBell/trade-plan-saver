@@ -9,6 +9,7 @@ const DEBUG = false;
 
 // Track current state (loaded from storage on startup)
 let isEnabled = false;
+let replayCaptureEnabled = false;
 
 if (DEBUG) console.log('[Trade Plan Saver] Background service worker starting...');
 
@@ -20,6 +21,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
   const settings = await getSettings();
   isEnabled = settings.isEnabled;
+  replayCaptureEnabled = settings.replayCaptureEnabled;
 
   if (DEBUG) console.log('[Trade Plan Saver] Initial settings loaded:', settings);
 });
@@ -32,6 +34,7 @@ chrome.runtime.onStartup.addListener(async () => {
 
   const settings = await getSettings();
   isEnabled = settings.isEnabled;
+  replayCaptureEnabled = settings.replayCaptureEnabled;
 
   if (DEBUG) console.log('[Trade Plan Saver] Settings loaded on startup:', settings);
 });
@@ -51,9 +54,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
   }
 
+  // Handle toggle replay capture from popup
+  if (message.type === 'TOGGLE_REPLAY_CAPTURE') {
+    replayCaptureEnabled = message.enabled;
+    if (DEBUG) console.log(`[Trade Plan Saver] Replay capture ${replayCaptureEnabled ? 'enabled' : 'disabled'}`);
+
+    sendResponse({ success: true, enabled: replayCaptureEnabled });
+    return false;
+  }
+
   // Handle trade plan capture from content script
   if (message.type === 'TRADE_PLAN_CAPTURED') {
-    handleTradePlanCapture(message.data, message.timestamp)
+    handleTradePlanCapture(message.data, message.timestamp, message.captureType)
       .then(result => sendResponse(result))
       .catch(error => {
         console.error('[Trade Plan Saver] Capture handler error:', error);
@@ -101,16 +113,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 /**
  * Handle captured trade plan data
  */
-async function handleTradePlanCapture(data, timestamp) {
-  if (DEBUG) console.log('[Trade Plan Saver] Processing trade plan capture...');
+async function handleTradePlanCapture(data, timestamp, captureType) {
+  if (DEBUG) console.log('[Trade Plan Saver] Processing trade plan capture, captureType:', captureType);
 
   // Check if capture is enabled (check storage directly to avoid stale state)
   const settings = await getSettings();
   if (DEBUG) console.log('[Trade Plan Saver] Current settings:', settings);
 
-  if (!settings.isEnabled) {
-    if (DEBUG) console.log('[Trade Plan Saver] Capture disabled, ignoring');
-    return { success: false, reason: 'disabled' };
+  if (captureType === 'replay') {
+    if (!settings.replayCaptureEnabled) {
+      if (DEBUG) console.log('[Trade Plan Saver] Replay capture disabled, ignoring');
+      return { success: false, reason: 'replay-disabled' };
+    }
+  } else {
+    if (!settings.isEnabled) {
+      if (DEBUG) console.log('[Trade Plan Saver] Capture disabled, ignoring');
+      return { success: false, reason: 'disabled' };
+    }
   }
 
   // Validate data structure
@@ -128,6 +147,13 @@ async function handleTradePlanCapture(data, timestamp) {
 
   // Save the file
   const result = await saveTradePlan(data, timestamp);
+
+  // Auto-disable replay capture after one successful save
+  if (result.success && captureType === 'replay') {
+    replayCaptureEnabled = false;
+    await saveSettings({ replayCaptureEnabled: false });
+    if (DEBUG) console.log('[Trade Plan Saver] Replay capture auto-disabled after one-shot save');
+  }
 
   // Show notification based on result
   if (result.success) {

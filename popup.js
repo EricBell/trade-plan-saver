@@ -8,6 +8,7 @@ let currentSettings = null;
 // DOM Elements
 const statusEl = document.getElementById('status');
 const toggleBtn = document.getElementById('toggle-btn');
+const replayBtn = document.getElementById('replay-btn');
 const audioBeepToggle = document.getElementById('audio-beep-toggle');
 const volumeSlider = document.getElementById('volume-slider');
 const volumeDisplay = document.getElementById('volume-display');
@@ -55,6 +56,15 @@ function updateUI() {
     toggleBtn.className = 'btn btn-primary';
   }
 
+  // Update replay capture button
+  if (currentSettings.replayCaptureEnabled) {
+    replayBtn.textContent = 'Waiting for Replay...';
+    replayBtn.classList.add('waiting');
+  } else {
+    replayBtn.textContent = 'Capture Next Replay';
+    replayBtn.classList.remove('waiting');
+  }
+
   // Update audio settings UI
   audioBeepToggle.checked = currentSettings.audioBeepEnabled;
   const volumePercent = Math.round(currentSettings.audioBeepVolume * 100);
@@ -67,9 +77,47 @@ function updateUI() {
  */
 function attachEventListeners() {
   toggleBtn.addEventListener('click', handleToggleCapture);
+  replayBtn.addEventListener('click', handleReplayCaptureToggle);
   audioBeepToggle.addEventListener('change', handleAudioBeepToggle);
   volumeSlider.addEventListener('input', handleVolumeChange);
   testBeepBtn.addEventListener('click', handleTestBeep);
+}
+
+/**
+ * Handle replay capture toggle button
+ */
+async function handleReplayCaptureToggle() {
+  console.log('[Trade Plan Saver Popup] Replay capture toggle clicked');
+
+  try {
+    const newState = !currentSettings.replayCaptureEnabled;
+
+    await saveSettings({ replayCaptureEnabled: newState });
+    currentSettings.replayCaptureEnabled = newState;
+
+    chrome.runtime.sendMessage({
+      type: 'TOGGLE_REPLAY_CAPTURE',
+      enabled: newState
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('[Trade Plan Saver Popup] Replay toggle message error:', chrome.runtime.lastError);
+      } else {
+        console.log('[Trade Plan Saver Popup] Replay toggle response:', response);
+      }
+    });
+
+    updateUI();
+
+    if (newState) {
+      showSuccess('Replay capture armed - navigate to a replay page to capture');
+    } else {
+      showSuccess('Replay capture disabled');
+    }
+
+  } catch (error) {
+    console.error('[Trade Plan Saver Popup] Replay toggle error:', error);
+    showError('Failed to toggle replay capture: ' + error.message);
+  }
 }
 
 /**
