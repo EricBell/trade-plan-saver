@@ -32,6 +32,7 @@ Chrome extension (Manifest V3) that captures JSON responses from `https://ttghg.
 1. **Increment the version number**: Increase the patch value (third number) in both `manifest.json` and `popup.html`
    - Example: `1.0.1` → `1.0.2`
    - For major features or breaking changes, increment minor or major version accordingly
+   - For patches/fixes increment the patch version accordingly
 
 2. **Update PRD.md**: Add a note about the change(s) in the "Change Log" section at the bottom of the file
    - Include the new version number in the changelog entry

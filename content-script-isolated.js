@@ -28,6 +28,7 @@
           type: 'TRADE_PLAN_CAPTURED',
           data: event.data.data,
           url: event.data.url,
+          captureType: event.data.captureType,
           timestamp: event.data.timestamp
         }, (response) => {
           if (chrome.runtime.lastError) {

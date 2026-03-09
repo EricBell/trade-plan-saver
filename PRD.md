@@ -393,3 +393,10 @@ if (permission !== 'granted') {
   - Added `chrome.storage.onChanged` listener in `popup.js` to reactively update `currentSettings` and call `updateUI()` when storage changes
   - Previously the popup cached settings on open and never refreshed, so the button stayed "Waiting..." even after the capture completed
 - Updated version to 1.7.0 in manifest.json and popup.html
+
+### 2026-03-09 - v1.7.1 - Fix captureType Dropped by Isolated World Bridge
+- **BUG FIX**: `captureType` was not forwarded from isolated world to background script
+  - `content-script-isolated.js` hardcoded which fields to pass in `chrome.runtime.sendMessage`, omitting `captureType`
+  - Background received `captureType: undefined`, treated all captures as live, never triggered auto-disable of replay capture
+  - Added `captureType: event.data.captureType` to the forwarded message
+- Updated version to 1.7.1 in manifest.json and popup.html
