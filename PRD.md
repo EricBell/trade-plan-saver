@@ -387,3 +387,9 @@ if (permission !== 'granted') {
   - `popup.css`: Added styles for `.replay-section`, `.btn-replay`, and `.btn-replay.waiting`
 - Live capture (`isEnabled` toggle) is completely unaffected by this change
 - Updated version to 1.6.0 in manifest.json and popup.html
+
+### 2026-03-09 - v1.7.0 - Fix Replay Button Not Resetting After Capture
+- **BUG FIX**: Popup "Waiting for Replay..." button now resets automatically after background auto-disables replay capture
+  - Added `chrome.storage.onChanged` listener in `popup.js` to reactively update `currentSettings` and call `updateUI()` when storage changes
+  - Previously the popup cached settings on open and never refreshed, so the button stayed "Waiting..." even after the capture completed
+- Updated version to 1.7.0 in manifest.json and popup.html
