@@ -245,5 +245,18 @@ async function handleTestBeep() {
   }
 }
 
+// Listen for storage changes (e.g. background auto-disabling replay capture)
+chrome.storage.onChanged.addListener((changes) => {
+  if (!currentSettings) return;
+  let changed = false;
+  for (const [key, { newValue }] of Object.entries(changes)) {
+    if (key in currentSettings) {
+      currentSettings[key] = newValue;
+      changed = true;
+    }
+  }
+  if (changed) updateUI();
+});
+
 // Initialize when popup opens
 document.addEventListener('DOMContentLoaded', init);
